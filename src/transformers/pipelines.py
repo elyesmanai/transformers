@@ -781,23 +781,16 @@ class FillMaskPipeline(Pipeline):
         outputs = self._forward(inputs, return_tensors=True)
 
         results = []
-        batch_size = outputs.shape[0] if self.framework == "tf" else outputs.size(0)
+        batch_size = outputs.size(0)
 
         for i in range(batch_size):
             input_ids = inputs["input_ids"][i]
             result = []
 
-            if self.framework == "tf":
-                masked_index = tf.where(input_ids == self.tokenizer.mask_token_id).numpy().item()
-                logits = outputs[i, masked_index, :]
-                probs = tf.nn.softmax(logits)
-                topk = tf.math.top_k(probs, k=self.topk)
-                values, predictions = topk.values.numpy(), topk.indices.numpy()
-            else:
-                masked_index = (input_ids == self.tokenizer.mask_token_id).nonzero().item()
-                logits = outputs[i, masked_index, :]
-                probs = logits.softmax(dim=0)
-                values, predictions = probs.topk(self.topk)
+            masked_index = (input_ids == self.tokenizer.mask_token_id).nonzero().item()
+            logits = outputs[i, masked_index, :]
+            probs = logits.softmax(dim=0)
+            values, predictions = probs.topk(self.topk)
 
             [result.append(self.tokenizer.decode(p)) for p in predictions.tolist()]
 
