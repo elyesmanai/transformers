@@ -790,7 +790,7 @@ class FillMaskPipeline(Pipeline):
             masked_index = (input_ids == self.tokenizer.mask_token_id).nonzero().item()
             logits = outputs[i, masked_index, :]
             probs = logits.softmax(dim=0)
-            values, predictions = probs.topk(self.topk)
+            values, predictions = probs.topk(3)
 
             [result.append(self.tokenizer.decode(p)) for p in predictions.tolist()]
 
