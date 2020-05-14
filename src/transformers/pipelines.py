@@ -794,9 +794,10 @@ class FillMaskPipeline(Pipeline):
 
             for v, p in zip(values.tolist(), predictions.tolist()):
                 tokens = input_ids.numpy()
+                tokens[masked_index] = p
                 # Filter padding out:
                 tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
-                result.append(self.tokenizer.decode(tokens))
+                result.append({"sequence": self.tokenizer.decode(tokens), "score": v, "token": p})
 
             # Append
             results += [result]
