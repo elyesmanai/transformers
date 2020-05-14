@@ -759,7 +759,7 @@ class FillMaskPipeline(Pipeline):
         modelcard: Optional[ModelCard] = None,
         framework: Optional[str] = None,
         args_parser: ArgumentHandler = None,
-        device: int = 0,
+        device: int = 1,
         topk=15,
         task: str = "",
     ):
