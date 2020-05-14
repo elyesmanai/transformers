@@ -799,12 +799,7 @@ class FillMaskPipeline(Pipeline):
                 probs = logits.softmax(dim=0)
                 values, predictions = probs.topk(self.topk)
 
-            for v, p in zip(values.tolist(), predictions.tolist()):
-                tokens = input_ids.numpy()
-                tokens[masked_index] = p
-                # Filter padding out:
-                tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
-                result.append({"sequence": self.tokenizer.decode(tokens)})
+            [result.append(self.tokenizer.decode(p)) for p in predictions.tolist()]
 
             # Append
             results += [result]
