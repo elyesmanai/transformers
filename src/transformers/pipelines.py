@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import numba
 import csv
 import json
 import logging
@@ -775,36 +775,28 @@ class FillMaskPipeline(Pipeline):
         )
 
         self.topk = topk
-
+    #@jit
     def __call__(self, *args, **kwargs):
         inputs = self._parse_and_tokenize(*args, **kwargs)
         outputs = self._forward(inputs, return_tensors=True)
 
         results = []
-        batch_size = outputs.shape[0] if self.framework == "tf" else outputs.size(0)
+        batch_size = outputs.size(0)
 
         for i in range(batch_size):
             input_ids = inputs["input_ids"][i]
             result = []
-
-            if self.framework == "tf":
-                masked_index = tf.where(input_ids == self.tokenizer.mask_token_id).numpy().item()
-                logits = outputs[i, masked_index, :]
-                probs = tf.nn.softmax(logits)
-                topk = tf.math.top_k(probs, k=self.topk)
-                values, predictions = topk.values.numpy(), topk.indices.numpy()
-            else:
-                masked_index = (input_ids == self.tokenizer.mask_token_id).nonzero().item()
-                logits = outputs[i, masked_index, :]
-                probs = logits.softmax(dim=0)
-                values, predictions = probs.topk(self.topk)
+            
+            masked_index = (input_ids == self.tokenizer.mask_token_id).nonzero().item()
+            logits = outputs[i, masked_index, :]
+            probs = logits.softmax(dim=0)
+            values, predictions = probs.topk(self.topk)
 
             for v, p in zip(values.tolist(), predictions.tolist()):
                 tokens = input_ids.numpy()
-                tokens[masked_index] = p
                 # Filter padding out:
                 tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
-                result.append({"sequence": self.tokenizer.decode(tokens), "score": v, "token": p})
+                result.append(self.tokenizer.decode(tokens))
 
             # Append
             results += [result]
