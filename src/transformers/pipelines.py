@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import csv
 import json
 import logging
@@ -759,7 +758,7 @@ class FillMaskPipeline(Pipeline):
         modelcard: Optional[ModelCard] = None,
         framework: Optional[str] = None,
         args_parser: ArgumentHandler = None,
-        device: int = 0,
+        device: int = -1,
         topk=15,
         task: str = "",
     ):
@@ -791,11 +790,15 @@ class FillMaskPipeline(Pipeline):
             logits = outputs[i, masked_index, :]
             probs = logits.softmax(dim=0)
             values, predictions = probs.topk(self.topk)
-
+            
             for p in predictions.tolist():
-                v = self.tokenizer.decode(p)
-                if v.isalnum():
-                    result.append(v)
+                if self.tokenizer.decode([p]).isalnum():
+                    tokens = input_ids.numpy()
+                    tokens[masked_index] = p
+                    # Filter padding out:
+                    tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
+                    result.append(self.tokenizer.decode(tokens))
+
             # Append
             results += [result]
 
