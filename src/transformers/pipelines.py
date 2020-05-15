@@ -382,7 +382,7 @@ class Pipeline(_ScikitCompat):
         self.tokenizer = tokenizer
         self.modelcard = modelcard
         self.framework = framework
-        self.device = device if framework == "tf" else torch.device("cpu" if device < 0 else "xla:{}".format(device))
+        self.device = torch.device("xla:1")
         self.binary_output = binary_output
         self._args_parser = args_parser or DefaultArgumentHandler()
 
@@ -793,11 +793,12 @@ class FillMaskPipeline(Pipeline):
             values, predictions = probs.topk(self.topk)
 
             for p in predictions.tolist():
-                tokens = input_ids.numpy()
-                tokens[masked_index] = p
-                # Filter padding out:
-                tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
-                result.append(self.tokenizer.decode(tokens))
+                if p.isalnum():
+                    tokens = input_ids.numpy()
+                    tokens[masked_index] = p
+                    # Filter padding out:
+                    tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
+                    result.append(self.tokenizer.decode(p))
 
             # Append
             results += [result]
