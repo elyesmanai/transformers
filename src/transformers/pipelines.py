@@ -371,7 +371,7 @@ class Pipeline(_ScikitCompat):
         framework: Optional[str] = None,
         task: str = "",
         args_parser: ArgumentHandler = None,
-        device: int = 1,
+        device: int = -1,
         binary_output: bool = False,
     ):
 
@@ -382,7 +382,7 @@ class Pipeline(_ScikitCompat):
         self.tokenizer = tokenizer
         self.modelcard = modelcard
         self.framework = framework
-        self.device = torch.device("xla:1")
+        self.device = device if framework == "tf" else torch.device("cpu" if device < 0 else "cuda:{}".format(device))
         self.binary_output = binary_output
         self._args_parser = args_parser or DefaultArgumentHandler()
 
@@ -759,7 +759,7 @@ class FillMaskPipeline(Pipeline):
         modelcard: Optional[ModelCard] = None,
         framework: Optional[str] = None,
         args_parser: ArgumentHandler = None,
-        device: int = 1,
+        device: int = 0,
         topk=15,
         task: str = "",
     ):
@@ -799,7 +799,6 @@ class FillMaskPipeline(Pipeline):
                     # Filter padding out:
                     tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
                     result.append(self.tokenizer.decode(p))
-
             # Append
             results += [result]
 
