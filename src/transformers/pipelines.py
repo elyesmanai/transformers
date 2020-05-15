@@ -793,12 +793,9 @@ class FillMaskPipeline(Pipeline):
             values, predictions = probs.topk(self.topk)
 
             for p in predictions.tolist():
-                if p.isalnum():
-                    tokens = input_ids.numpy()
-                    tokens[masked_index] = p
-                    # Filter padding out:
-                    tokens = tokens[np.where(tokens != self.tokenizer.pad_token_id)]
-                    result.append(self.tokenizer.decode(p))
+                v = self.tokenizer.decode(p)
+                if v.isalnum():
+                    result.append(v)
             # Append
             results += [result]
 
